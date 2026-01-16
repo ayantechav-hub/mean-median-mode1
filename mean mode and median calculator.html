@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mean Median Mode Calculator</title>
+
+<!-- jsPDF CDN for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#000;
+  --panel:#050505;
+  --blue:#00ccff;
+  --green:#00ffcc;
+  --text:#cfffff;
+}
+body.light{
+  --bg:#f5ffff;
+  --panel:#ffffff;
+  --blue:#0066cc;
+  --green:#009977;
+  --text:#003333;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  background:var(--bg);
+  font-family:Segoe UI,sans-serif;
+  color:var(--text);
+  padding:20px 0;
+}
+.container{
+  width:95%;
+  max-width:1100px;
+  background:var(--panel);
+  border:2px solid var(--green);
+  border-radius:18px;
+  padding:22px;
+  box-shadow:0 0 20px var(--green);
+}
+h1{text-align:center;color:var(--blue); text-shadow:0 0 8px var(--blue);}
+.bar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:14px 0;
+}
+.tab{
+  padding:8px 14px;
+  border-radius:20px;
+  border:1px solid var(--green);
+  cursor:pointer;
+  user-select:none;
+}
+.tab.active{
+  background:linear-gradient(90deg,var(--green),var(--blue));
+  color:#000;
+}
+.right{margin-left:auto}
+textarea{
+  width:100%;
+  height:80px;
+  padding:12px;
+  background:#000;
+  color:var(--text);
+  border:1px solid var(--green);
+  border-radius:10px;
+}
+button{
+  width:100%;
+  margin-top:12px;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(90deg,var(--green),var(--blue));
+  cursor:pointer;
+  font-weight:bold;
+}
+.section{
+  margin-top:16px;
+  padding:14px;
+  border:1px solid var(--green);
+  border-radius:12px;
+}
+.format{display:flex;gap:10px}
+.format .tab{flex:1;text-align:center}
+.credit{text-align:center;margin-top:16px;color:var(--blue)}
+.modal{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+.modal-box{
+  background:var(--panel);
+  padding:18px;
+  border-radius:14px;
+  border:2px solid var(--green);
+  width:300px;
+  text-align:center;
+}
+.modal-box button{
+  margin:6px 0;
+  width:90%;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>Mean • Median • Mode</h1>
+
+<!-- Tabs -->
+<div class="bar" id="calcTabs">
+  <div class="tab active" data-type="mean">Mean</div>
+  <div class="tab" data-type="median">Median</div>
+  <div class="tab" data-type="mode">Mode</div>
+  <div class="tab" data-type="mean+median">Mean + Median</div>
+  <div class="tab" data-type="mean+mode">Mean + Mode</div>
+  <div class="tab" data-type="median+mode">Median + Mode</div>
+  <div class="tab" data-type="all">All</div>
+  <div class="tab right" onclick="toggleTheme()">Dark / Light</div>
+  <div class="tab" onclick="openShare()">Share</div>
+</div>
+
+<textarea id="numbers" placeholder="Example: 1, 2, 3, 4"></textarea>
+<button onclick="calculate()">Calculate</button>
+
+<!-- Decimal/Fraction -->
+<div class="section format" id="formatTabs">
+  <div class="tab active" data-format="decimal">Decimal</div>
+  <div class="tab" data-format="fraction">Fraction</div>
+</div>
+
+<div class="section" id="result"></div>
+<div class="section" id="steps"></div>
+
+<button onclick="exportPDF()">📄 Export as PDF</button>
+
+<div class="credit">Made by <b>AYAN RANA</b></div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal" id="shareModal">
+  <div class="modal-box">
+    <b>Share via</b><br>
+    <button onclick="shareWA()">🟢 WhatsApp</button>
+    <button onclick="shareTG()">🔵 Telegram</button>
+    <button onclick="shareMail()">✉ Email</button>
+    <button onclick="copyLink()">🔗 Copy Link</button>
+    <button onclick="closeShare()">Close</button>
+  </div>
+</div>
+
+<script>
+let calcType="mean",format="decimal",data=null;
+
+/* Tabs logic */
+calcTabs.onclick=e=>{
+  if(!e.target.dataset.type)return;
+  calcType=e.target.dataset.type;
+  [...calcTabs.children].forEach(t=>t.classList.remove("active"));
+  e.target.classList.add("active");
+  if(data)render();
+};
+formatTabs.onclick=e=>{
+  if(!e.target.dataset.format)return;
+  format=e.target.dataset.format;
+  [...formatTabs.children].forEach(t=>t.classList.remove("active"));
+  e.target.classList.add("active");
+  if(data)render();
+};
+
+/* Dark/Light toggle */
+function toggleTheme(){document.body.classList.toggle("light")}
+
+/* Share functions */
+function openShare(){shareModal.style.display="flex"}
+function closeShare(){shareModal.style.display="none"}
+function copyLink(){
+  navigator.clipboard.writeText(location.href);
+  alert("Link copied");
+}
+function shareWA(){window.open("https://wa.me/?text="+encodeURIComponent(location.href),"_blank")}
+function shareTG(){window.open("https://t.me/share/url?url="+encodeURIComponent(location.href),"_blank")}
+function shareMail(){window.open("mailto:?subject=Mean Median Mode Calculator&body="+encodeURIComponent(location.href))}
+
+/* Fraction helper */
+function toFraction(x){
+  let d=1; while(Math.abs(x*d-Math.round(x*d))>1e-6 && d<10000)d++;
+  return `${Math.round(x*d)}/${d}`;
+}
+const show=x=>format==="fraction"?toFraction(x):x;
+
+/* Calculate core logic */
+function calculate(){
+  const arr=numbers.value.split(/[\s,]+/).map(Number).filter(n=>!isNaN(n));
+  if(!arr.length)return;
+
+  const sorted=[...arr].sort((a,b)=>a-b);
+  const sum=arr.reduce((a,b)=>a+b,0);
+  const mean=sum/arr.length;
+
+  let median;
+  let medianSteps;
+  if(sorted.length%2===1){
+    median=sorted[Math.floor(sorted.length/2)];
+    medianSteps=`Odd count → middle value = ${median}`;
+  }else{
+    const a=sorted[sorted.length/2-1];
+    const b=sorted[sorted.length/2];
+    median=(a+b)/2;
+    medianSteps=`Even count → (${a} + ${b}) / 2`;
+  }
+
+  const freq={};
+  arr.forEach(n=>freq[n]=(freq[n]||0)+1);
+  const maxFreq=Math.max(...Object.values(freq));
+  const mode=Object.keys(freq).filter(k=>freq[k]===maxFreq).map(Number);
+
+  data={arr,sorted,sum,mean,median,medianSteps,mode,freq};
+  render();
+}
+
+/* Render results */
+function render(){
+  let r=[],s=[];
+  if(calcType.includes("mean")||calcType==="all"){
+    r.push(`<b>Mean:</b> ${show(data.mean)}`);
+    s.push(`Mean = ${data.sum} ÷ ${data.arr.length}`);
+  }
+  if(calcType.includes("median")||calcType==="all"){
+    r.push(`<b>Median:</b> ${show(data.median)}`);
+    s.push(data.medianSteps);
+  }
+  if(calcType.includes("mode")||calcType==="all"){
+    r.push(`<b>Mode:</b> ${data.mode.join(", ")}`);
+    s.push(`Frequencies: ${JSON.stringify(data.freq)}`);
+  }
+  result.innerHTML=r.join("<br>");
+  steps.innerHTML="<b>Steps:</b><br>"+s.join("<br>");
+}
+
+/* Export PDF */
+function exportPDF(){
+  if(!data)return;
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  pdf.setFontSize(20);
+  pdf.text("Mean Median Mode",20,20);
+  pdf.setFontSize(14);
+  pdf.text(result.innerText,20,40);
+  pdf.text("Steps:",20,70);
+  pdf.text(steps.innerText,20,80);
+  pdf.setFontSize(9);
+  pdf.text(
+    "Taken from Mean, Median and Mode Calculator Web App by Ayan Rana",
+    20,285
+  );
+  pdf.save("mean-median-mode.pdf");
+}
+</script>
+
+</body>
+</html> 
